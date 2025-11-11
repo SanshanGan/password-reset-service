@@ -77,7 +77,8 @@ class PasswordResetRequestRepositoryTest {
         )
 
         assertNotNull(found)
-        assertFalse(found!!.used)
+        requireNotNull(found)
+        assertFalse(found.used)
         assertTrue(found.expiresAt.isAfter(LocalDateTime.now()))
     }
 

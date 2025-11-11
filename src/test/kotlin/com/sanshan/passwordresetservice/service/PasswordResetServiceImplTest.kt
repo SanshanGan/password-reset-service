@@ -1,6 +1,7 @@
 package com.sanshan.passwordresetservice.service
 
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
+import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
 import com.sanshan.passwordresetservice.exception.InvalidTokenException
@@ -127,7 +128,7 @@ class PasswordResetServiceImplTest {
         assertEquals("Password successfully reset", response.message)
         assertTrue(requestCaptor.firstValue.used)
         assertNotNull(requestCaptor.firstValue.usedAt)
-        verify(userService).updatePassword(user.id!!, TEST_PASSWORD)
+        verify(userService).updatePassword(user.persistedId, TEST_PASSWORD)
         verify(passwordResetRequestRepository).save(any())
     }
 

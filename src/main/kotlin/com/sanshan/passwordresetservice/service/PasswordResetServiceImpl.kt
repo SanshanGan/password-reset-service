@@ -3,6 +3,7 @@ package com.sanshan.passwordresetservice.service
 import com.sanshan.passwordresetservice.dto.PasswordResetExecutionResponse
 import com.sanshan.passwordresetservice.dto.PasswordResetResponse
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
+import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
 import com.sanshan.passwordresetservice.exception.InvalidTokenException
@@ -95,7 +96,7 @@ class PasswordResetServiceImpl(
         }
 
         val user = resetRequest.user
-        userService.updatePassword(user.id!!, newPassword)
+        userService.updatePassword(user.persistedId, newPassword)
 
         resetRequest.used = true
         resetRequest.usedAt = currentTime

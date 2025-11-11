@@ -27,3 +27,10 @@ data class User(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now()
 )
+
+/**
+ * Extension property to safely access the ID of a persisted User entity.
+ * @throws IllegalStateException if the entity has not been persisted yet.
+ */
+val User.persistedId: Long
+    get() = requireNotNull(id) { "User must be persisted to have an ID" }
