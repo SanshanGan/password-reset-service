@@ -1,16 +1,30 @@
 package com.sanshan.passwordresetservice.service
 
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
-import com.sanshan.passwordresetservice.exception.*
-import com.sanshan.passwordresetservice.fixtures.TestFixtures
+import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
+import com.sanshan.passwordresetservice.exception.InvalidEmailException
+import com.sanshan.passwordresetservice.exception.InvalidTokenException
+import com.sanshan.passwordresetservice.exception.TokenAlreadyUsedException
+import com.sanshan.passwordresetservice.exception.UserNotFoundException
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createExpiredPasswordResetRequest
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createPasswordResetRequest
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createTestUser
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createUsedPasswordResetRequest
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_EMAIL
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_PASSWORD
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_TOKEN
 import com.sanshan.passwordresetservice.repository.PasswordResetRequestRepository
 import com.sanshan.passwordresetservice.util.EmailValidator
 import com.sanshan.passwordresetservice.util.TokenGenerator
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
@@ -40,30 +54,30 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `initiatePasswordReset should return token when valid email and no active request`() {
-        val user = TestFixtures.createTestUser()
+        val user = createTestUser()
         val requestCaptor = argumentCaptor<PasswordResetRequest>()
 
-        whenever(emailValidator.isValid(TestFixtures.TEST_EMAIL)).thenReturn(true)
-        whenever(userService.findByEmail(TestFixtures.TEST_EMAIL)).thenReturn(user)
+        whenever(emailValidator.isValid(TEST_EMAIL)).thenReturn(true)
+        whenever(userService.findByEmail(TEST_EMAIL)).thenReturn(user)
         whenever(passwordResetRequestRepository.existsByUserAndUsedFalseAndExpiresAtAfter(any(), any()))
             .thenReturn(false)
-        whenever(tokenGenerator.generateResetToken()).thenReturn(TestFixtures.TEST_TOKEN)
+        whenever(tokenGenerator.generateResetToken()).thenReturn(TEST_TOKEN)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
-        val response = passwordResetService.initiatePasswordReset(TestFixtures.TEST_EMAIL)
+        val response = passwordResetService.initiatePasswordReset(TEST_EMAIL)
 
         assertNotNull(response)
-        assertEquals(TestFixtures.TEST_TOKEN, response.resetToken)
+        assertEquals(TEST_TOKEN, response.resetToken)
         assertNotNull(response.expiresAt)
         verify(passwordResetRequestRepository).save(any())
     }
 
     @Test
     fun `initiatePasswordReset should throw InvalidEmailException when email format is invalid`() {
-        whenever(emailValidator.isValid(TestFixtures.TEST_EMAIL)).thenReturn(false)
+        whenever(emailValidator.isValid(TEST_EMAIL)).thenReturn(false)
 
         assertThrows<InvalidEmailException> {
-            passwordResetService.initiatePasswordReset(TestFixtures.TEST_EMAIL)
+            passwordResetService.initiatePasswordReset(TEST_EMAIL)
         }
 
         verify(userService, never()).findByEmail(any())
@@ -71,11 +85,11 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `initiatePasswordReset should throw UserNotFoundException when user does not exist`() {
-        whenever(emailValidator.isValid(TestFixtures.TEST_EMAIL)).thenReturn(true)
-        whenever(userService.findByEmail(TestFixtures.TEST_EMAIL)).thenReturn(null)
+        whenever(emailValidator.isValid(TEST_EMAIL)).thenReturn(true)
+        whenever(userService.findByEmail(TEST_EMAIL)).thenReturn(null)
 
         assertThrows<UserNotFoundException> {
-            passwordResetService.initiatePasswordReset(TestFixtures.TEST_EMAIL)
+            passwordResetService.initiatePasswordReset(TEST_EMAIL)
         }
 
         verify(passwordResetRequestRepository, never()).save(any())
@@ -83,15 +97,15 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `initiatePasswordReset should throw ActiveRequestExistsException when active request exists`() {
-        val user = TestFixtures.createTestUser()
+        val user = createTestUser()
 
-        whenever(emailValidator.isValid(TestFixtures.TEST_EMAIL)).thenReturn(true)
-        whenever(userService.findByEmail(TestFixtures.TEST_EMAIL)).thenReturn(user)
+        whenever(emailValidator.isValid(TEST_EMAIL)).thenReturn(true)
+        whenever(userService.findByEmail(TEST_EMAIL)).thenReturn(user)
         whenever(passwordResetRequestRepository.existsByUserAndUsedFalseAndExpiresAtAfter(any(), any()))
             .thenReturn(true)
 
         assertThrows<ActiveRequestExistsException> {
-            passwordResetService.initiatePasswordReset(TestFixtures.TEST_EMAIL)
+            passwordResetService.initiatePasswordReset(TEST_EMAIL)
         }
 
         verify(tokenGenerator, never()).generateResetToken()
@@ -100,29 +114,29 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should succeed with valid token`() {
-        val user = TestFixtures.createTestUser()
-        val resetRequest = TestFixtures.createPasswordResetRequest(user = user)
+        val user = createTestUser()
+        val resetRequest = createPasswordResetRequest(user = user)
         val requestCaptor = argumentCaptor<PasswordResetRequest>()
 
-        whenever(passwordResetRequestRepository.findByToken(TestFixtures.TEST_TOKEN)).thenReturn(resetRequest)
+        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
-        val response = passwordResetService.executePasswordReset(TestFixtures.TEST_TOKEN, TestFixtures.TEST_PASSWORD)
+        val response = passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
 
         assertNotNull(response)
         assertEquals("Password successfully reset", response.message)
         assertTrue(requestCaptor.firstValue.used)
         assertNotNull(requestCaptor.firstValue.usedAt)
-        verify(userService).updatePassword(user.id!!, TestFixtures.TEST_PASSWORD)
+        verify(userService).updatePassword(user.id!!, TEST_PASSWORD)
         verify(passwordResetRequestRepository).save(any())
     }
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token not found`() {
-        whenever(passwordResetRequestRepository.findByToken(TestFixtures.TEST_TOKEN)).thenReturn(null)
+        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(null)
 
         assertThrows<InvalidTokenException> {
-            passwordResetService.executePasswordReset(TestFixtures.TEST_TOKEN, TestFixtures.TEST_PASSWORD)
+            passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
         }
 
         verify(userService, never()).updatePassword(any(), any())
@@ -130,13 +144,13 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token is expired`() {
-        val user = TestFixtures.createTestUser()
-        val resetRequest = TestFixtures.createExpiredPasswordResetRequest(user = user)
+        val user = createTestUser()
+        val resetRequest = createExpiredPasswordResetRequest(user = user)
 
-        whenever(passwordResetRequestRepository.findByToken(TestFixtures.TEST_TOKEN)).thenReturn(resetRequest)
+        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
 
         assertThrows<InvalidTokenException> {
-            passwordResetService.executePasswordReset(TestFixtures.TEST_TOKEN, TestFixtures.TEST_PASSWORD)
+            passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
         }
 
         verify(userService, never()).updatePassword(any(), any())
@@ -144,13 +158,13 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw TokenAlreadyUsedException when token already used`() {
-        val user = TestFixtures.createTestUser()
-        val resetRequest = TestFixtures.createUsedPasswordResetRequest(user = user)
+        val user = createTestUser()
+        val resetRequest = createUsedPasswordResetRequest(user = user)
 
-        whenever(passwordResetRequestRepository.findByToken(TestFixtures.TEST_TOKEN)).thenReturn(resetRequest)
+        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
 
         assertThrows<TokenAlreadyUsedException> {
-            passwordResetService.executePasswordReset(TestFixtures.TEST_TOKEN, TestFixtures.TEST_PASSWORD)
+            passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
         }
 
         verify(userService, never()).updatePassword(any(), any())

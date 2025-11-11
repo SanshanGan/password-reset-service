@@ -80,18 +80,18 @@ class PasswordResetServiceImpl(
         val resetRequest = passwordResetRequestRepository.findByToken(token)
             ?: run {
                 logger.warn("Invalid token: token not found")
-                throw InvalidTokenException(token)
+                throw InvalidTokenException()
             }
 
         val currentTime = LocalDateTime.now()
         if (resetRequest.expiresAt.isBefore(currentTime)) {
             logger.warn("Token expired: token={}, expiresAt={}", token.take(8), resetRequest.expiresAt)
-            throw InvalidTokenException(token)
+            throw InvalidTokenException()
         }
 
         if (resetRequest.used) {
             logger.warn("Token already used: token={}, usedAt={}", token.take(8), resetRequest.usedAt)
-            throw TokenAlreadyUsedException(token)
+            throw TokenAlreadyUsedException()
         }
 
         val user = resetRequest.user

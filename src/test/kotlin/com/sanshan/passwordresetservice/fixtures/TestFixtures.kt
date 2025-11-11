@@ -14,7 +14,7 @@ object TestFixtures {
     const val UNIQUE_TOKEN = "unique-token"
     const val TEST_REPO_TOKEN = "test-token"
     const val TEST_PASSWORD = "NewPassword123"
-    const val HASHED_PASSWORD = "\$2a\$10\$hashedPassword"
+    const val HASHED_PASSWORD = "$2a$10\$hashedPassword"
     const val TEST_USER_ID = 1L
     
     fun createTestUser(

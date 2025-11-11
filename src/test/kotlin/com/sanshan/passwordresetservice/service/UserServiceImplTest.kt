@@ -1,19 +1,28 @@
 package com.sanshan.passwordresetservice.service
 
 import com.sanshan.passwordresetservice.entity.User
-import com.sanshan.passwordresetservice.fixtures.TestFixtures
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createTestUser
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.HASHED_PASSWORD
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_EMAIL
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_PASSWORD
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_USER_ID
 import com.sanshan.passwordresetservice.repository.UserRepository
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.LocalDateTime
-import java.util.*
+import java.util.Optional
 
 class UserServiceImplTest {
 
@@ -31,40 +40,40 @@ class UserServiceImplTest {
 
     @Test
     fun `findByEmail should return user when exists`() {
-        val user = TestFixtures.createTestUser()
+        val user = createTestUser()
 
-        whenever(userRepository.findByEmail(TestFixtures.TEST_EMAIL)).thenReturn(user)
+        whenever(userRepository.findByEmail(TEST_EMAIL)).thenReturn(user)
 
-        val result = userService.findByEmail(TestFixtures.TEST_EMAIL)
+        val result = userService.findByEmail(TEST_EMAIL)
 
         assertNotNull(result)
-        assertEquals(TestFixtures.TEST_EMAIL, result?.email)
-        verify(userRepository).findByEmail(TestFixtures.TEST_EMAIL)
+        assertEquals(TEST_EMAIL, result?.email)
+        verify(userRepository).findByEmail(TEST_EMAIL)
     }
 
     @Test
     fun `findByEmail should return null when user does not exist`() {
-        whenever(userRepository.findByEmail(TestFixtures.TEST_EMAIL)).thenReturn(null)
+        whenever(userRepository.findByEmail(TEST_EMAIL)).thenReturn(null)
 
-        val result = userService.findByEmail(TestFixtures.TEST_EMAIL)
+        val result = userService.findByEmail(TEST_EMAIL)
 
         assertNull(result)
-        verify(userRepository).findByEmail(TestFixtures.TEST_EMAIL)
+        verify(userRepository).findByEmail(TEST_EMAIL)
     }
 
     @Test
     fun `updatePassword should hash password and update user`() {
-        val user = TestFixtures.createTestUser()
+        val user = createTestUser()
         val userCaptor = argumentCaptor<User>()
 
-        whenever(userRepository.findById(TestFixtures.TEST_USER_ID)).thenReturn(Optional.of(user))
-        whenever(passwordEncoder.encode(TestFixtures.TEST_PASSWORD)).thenReturn(TestFixtures.HASHED_PASSWORD)
+        whenever(userRepository.findById(TEST_USER_ID)).thenReturn(Optional.of(user))
+        whenever(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(HASHED_PASSWORD)
         whenever(userRepository.save(userCaptor.capture())).thenAnswer { userCaptor.firstValue }
 
-        userService.updatePassword(TestFixtures.TEST_USER_ID, TestFixtures.TEST_PASSWORD)
+        userService.updatePassword(TEST_USER_ID, TEST_PASSWORD)
 
-        assertEquals(TestFixtures.HASHED_PASSWORD, userCaptor.firstValue.passwordHash)
-        verify(passwordEncoder).encode(TestFixtures.TEST_PASSWORD)
+        assertEquals(HASHED_PASSWORD, userCaptor.firstValue.passwordHash)
+        verify(passwordEncoder).encode(TEST_PASSWORD)
         verify(userRepository).save(any())
     }
 
@@ -75,7 +84,7 @@ class UserServiceImplTest {
         whenever(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty())
 
         assertThrows<IllegalArgumentException> {
-            userService.updatePassword(nonExistentUserId, TestFixtures.TEST_PASSWORD)
+            userService.updatePassword(nonExistentUserId, TEST_PASSWORD)
         }
 
         verify(passwordEncoder, never()).encode(any())
@@ -85,14 +94,14 @@ class UserServiceImplTest {
     @Test
     fun `updatePassword should update updatedAt timestamp`() {
         val oldTimestamp = LocalDateTime.now().minusDays(1)
-        val user = TestFixtures.createTestUser(updatedAt = oldTimestamp)
+        val user = createTestUser(updatedAt = oldTimestamp)
         val userCaptor = argumentCaptor<User>()
 
-        whenever(userRepository.findById(TestFixtures.TEST_USER_ID)).thenReturn(Optional.of(user))
-        whenever(passwordEncoder.encode(TestFixtures.TEST_PASSWORD)).thenReturn(TestFixtures.HASHED_PASSWORD)
+        whenever(userRepository.findById(TEST_USER_ID)).thenReturn(Optional.of(user))
+        whenever(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(HASHED_PASSWORD)
         whenever(userRepository.save(userCaptor.capture())).thenAnswer { userCaptor.firstValue }
 
-        userService.updatePassword(TestFixtures.TEST_USER_ID, TestFixtures.TEST_PASSWORD)
+        userService.updatePassword(TEST_USER_ID, TEST_PASSWORD)
 
         assertTrue(userCaptor.firstValue.updatedAt.isAfter(oldTimestamp))
         verify(userRepository).save(any())

@@ -1,7 +1,15 @@
 package com.sanshan.passwordresetservice.repository
 
-import com.sanshan.passwordresetservice.fixtures.TestFixtures
-import org.junit.jupiter.api.Assertions.*
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createPasswordResetRequest
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createTestUser
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_REPO_TOKEN
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.UNIQUE_TOKEN
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,17 +37,17 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `findByToken should return request when exists`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val request = TestFixtures.createPasswordResetRequest(id = null, user = user, token = TestFixtures.TEST_REPO_TOKEN)
+        val request = createPasswordResetRequest(id = null, user = user, token = TEST_REPO_TOKEN)
         entityManager.persist(request)
         entityManager.flush()
 
-        val found = passwordResetRequestRepository.findByToken(TestFixtures.TEST_REPO_TOKEN)
+        val found = passwordResetRequestRepository.findByToken(TEST_REPO_TOKEN)
 
         assertNotNull(found)
-        assertEquals(TestFixtures.TEST_REPO_TOKEN, found?.token)
+        assertEquals(TEST_REPO_TOKEN, found?.token)
     }
 
     @Test
@@ -51,10 +59,10 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `findByUserAndUsedFalseAndExpiresAtAfter should return active request`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val activeRequest = TestFixtures.createPasswordResetRequest(
+        val activeRequest = createPasswordResetRequest(
             id = null,
             user = user,
             used = false,
@@ -75,10 +83,10 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `findByUserAndUsedFalseAndExpiresAtAfter should not return expired request`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val expiredRequest = TestFixtures.createPasswordResetRequest(
+        val expiredRequest = createPasswordResetRequest(
             id = null,
             user = user,
             used = false,
@@ -97,10 +105,10 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `findByUserAndUsedFalseAndExpiresAtAfter should not return used request`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val usedRequest = TestFixtures.createPasswordResetRequest(
+        val usedRequest = createPasswordResetRequest(
             id = null,
             user = user,
             used = true,
@@ -119,10 +127,10 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `existsByUserAndUsedFalseAndExpiresAtAfter should return true for active request`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val activeRequest = TestFixtures.createPasswordResetRequest(
+        val activeRequest = createPasswordResetRequest(
             id = null,
             user = user,
             used = false,
@@ -141,7 +149,7 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `existsByUserAndUsedFalseAndExpiresAtAfter should return false when no active request`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         entityManager.flush()
 
@@ -155,14 +163,14 @@ class PasswordResetRequestRepositoryTest {
 
     @Test
     fun `should enforce unique token constraint`() {
-        val user = TestFixtures.createTestUser(id = null)
+        val user = createTestUser(id = null)
         entityManager.persist(user)
         
-        val request1 = TestFixtures.createPasswordResetRequest(id = null, user = user, token = TestFixtures.UNIQUE_TOKEN)
+        val request1 = createPasswordResetRequest(id = null, user = user, token = UNIQUE_TOKEN)
         entityManager.persist(request1)
         entityManager.flush()
 
-        val request2 = TestFixtures.createPasswordResetRequest(id = null, user = user, token = TestFixtures.UNIQUE_TOKEN)
+        val request2 = createPasswordResetRequest(id = null, user = user, token = UNIQUE_TOKEN)
 
         assertThrows(Exception::class.java) {
             entityManager.persist(request2)

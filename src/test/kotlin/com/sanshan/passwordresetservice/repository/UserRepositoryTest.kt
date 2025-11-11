@@ -1,7 +1,16 @@
 package com.sanshan.passwordresetservice.repository
 
-import com.sanshan.passwordresetservice.fixtures.TestFixtures
-import org.junit.jupiter.api.Assertions.*
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.createTestUser
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.EXISTS_EMAIL
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.NONEXISTENT_EMAIL
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_EMAIL
+import com.sanshan.passwordresetservice.fixtures.TestFixtures.UNIQUE_EMAIL
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,48 +33,48 @@ class UserRepositoryTest {
 
     @Test
     fun `findByEmail should return user when exists`() {
-        val user = TestFixtures.createTestUser(id = null, email = TestFixtures.TEST_EMAIL)
+        val user = createTestUser(id = null, email = TEST_EMAIL)
         entityManager.persist(user)
         entityManager.flush()
 
-        val found = userRepository.findByEmail(TestFixtures.TEST_EMAIL)
+        val found = userRepository.findByEmail(TEST_EMAIL)
 
         assertNotNull(found)
-        assertEquals(TestFixtures.TEST_EMAIL, found?.email)
+        assertEquals(TEST_EMAIL, found?.email)
     }
 
     @Test
     fun `findByEmail should return null when user does not exist`() {
-        val found = userRepository.findByEmail(TestFixtures.NONEXISTENT_EMAIL)
+        val found = userRepository.findByEmail(NONEXISTENT_EMAIL)
 
         assertNull(found)
     }
 
     @Test
     fun `existsByEmail should return true when user exists`() {
-        val user = TestFixtures.createTestUser(id = null, email = TestFixtures.EXISTS_EMAIL)
+        val user = createTestUser(id = null, email = EXISTS_EMAIL)
         entityManager.persist(user)
         entityManager.flush()
 
-        val exists = userRepository.existsByEmail(TestFixtures.EXISTS_EMAIL)
+        val exists = userRepository.existsByEmail(EXISTS_EMAIL)
 
         assertTrue(exists)
     }
 
     @Test
     fun `existsByEmail should return false when user does not exist`() {
-        val exists = userRepository.existsByEmail(TestFixtures.NONEXISTENT_EMAIL)
+        val exists = userRepository.existsByEmail(NONEXISTENT_EMAIL)
 
         assertFalse(exists)
     }
 
     @Test
     fun `should enforce unique email constraint`() {
-        val user1 = TestFixtures.createTestUser(id = null, email = TestFixtures.UNIQUE_EMAIL)
+        val user1 = createTestUser(id = null, email = UNIQUE_EMAIL)
         entityManager.persist(user1)
         entityManager.flush()
 
-        val user2 = TestFixtures.createTestUser(id = null, email = TestFixtures.UNIQUE_EMAIL)
+        val user2 = createTestUser(id = null, email = UNIQUE_EMAIL)
 
         assertThrows(Exception::class.java) {
             entityManager.persist(user2)

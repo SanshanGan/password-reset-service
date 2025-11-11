@@ -11,8 +11,8 @@ class UserNotFoundException(email: String) :
 class ActiveRequestExistsException(email: String) :
     PasswordResetException("Active password reset request already exists for: $email")
 
-class InvalidTokenException(token: String) :
+class InvalidTokenException :
     PasswordResetException("Invalid or expired reset token")
 
-class TokenAlreadyUsedException(token: String) :
+class TokenAlreadyUsedException :
     PasswordResetException("Reset token has already been used")
