@@ -5,6 +5,8 @@ import com.sanshan.passwordresetservice.dto.PasswordResetResponse
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
+import com.sanshan.passwordresetservice.exception.InvalidTokenException
+import com.sanshan.passwordresetservice.exception.TokenAlreadyUsedException
 import com.sanshan.passwordresetservice.exception.UserNotFoundException
 import com.sanshan.passwordresetservice.repository.PasswordResetRequestRepository
 import com.sanshan.passwordresetservice.util.EmailValidator
@@ -71,7 +73,38 @@ class PasswordResetServiceImpl(
         )
     }
 
+    @Transactional
     override fun executePasswordReset(token: String, newPassword: String): PasswordResetExecutionResponse {
-        TODO("Not yet implemented")
+        logger.info("Executing password reset for token: {}...", token.take(8))
+
+        val resetRequest = passwordResetRequestRepository.findByToken(token)
+            ?: run {
+                logger.warn("Invalid token: token not found")
+                throw InvalidTokenException(token)
+            }
+
+        val currentTime = LocalDateTime.now()
+        if (resetRequest.expiresAt.isBefore(currentTime)) {
+            logger.warn("Token expired: token={}, expiresAt={}", token.take(8), resetRequest.expiresAt)
+            throw InvalidTokenException(token)
+        }
+
+        if (resetRequest.used) {
+            logger.warn("Token already used: token={}, usedAt={}", token.take(8), resetRequest.usedAt)
+            throw TokenAlreadyUsedException(token)
+        }
+
+        val user = resetRequest.user
+        userService.updatePassword(user.id!!, newPassword)
+
+        resetRequest.used = true
+        resetRequest.usedAt = currentTime
+        passwordResetRequestRepository.save(resetRequest)
+
+        logger.info("Password successfully reset for user: {}", user.email)
+
+        return PasswordResetExecutionResponse(
+            message = "Password successfully reset"
+        )
     }
 }
