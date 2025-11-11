@@ -6,15 +6,19 @@ import java.time.LocalDateTime
 
 object TestFixtures {
 
-    const val TEST_EMAIL = "testUser@example.com"
+    const val TEST_EMAIL = "test@example.com"
+    const val UNIQUE_EMAIL = "unique@example.com"
+    const val EXISTS_EMAIL = "exists@example.com"
+    const val NONEXISTENT_EMAIL = "nonexistent@example.com"
     const val TEST_TOKEN = "test-token-uuid"
+    const val UNIQUE_TOKEN = "unique-token"
+    const val TEST_REPO_TOKEN = "test-token"
     const val TEST_PASSWORD = "NewPassword123"
-    const val OLD_PASSWORD = "OldPassword123"
     const val HASHED_PASSWORD = "\$2a\$10\$hashedPassword"
     const val TEST_USER_ID = 1L
     
     fun createTestUser(
-        id: Long = TEST_USER_ID,
+        id: Long? = TEST_USER_ID,
         email: String = TEST_EMAIL,
         passwordHash: String = HASHED_PASSWORD,
         createdAt: LocalDateTime = LocalDateTime.now(),
@@ -30,7 +34,7 @@ object TestFixtures {
     }
     
     fun createPasswordResetRequest(
-        id: Long = 1L,
+        id: Long? = 1L,
         user: User = createTestUser(),
         token: String = TEST_TOKEN,
         createdAt: LocalDateTime = LocalDateTime.now(),
