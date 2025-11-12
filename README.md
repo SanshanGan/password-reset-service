@@ -90,8 +90,12 @@ Import Postman collection from `postman/Password-Reset-Service.postman_collectio
 
 ## Security Features
 
-- BCrypt password hashing (10 rounds)
-- UUID-based single-use tokens
-- 30-minute token expiration
-- One active reset request per user
-- Email format validation
+- **BCrypt password hashing** (10 rounds) for user passwords
+- **BCrypt token hashing** - Reset tokens are hashed before storage in the database
+  - Raw tokens are returned in API response (for exercise purposes)
+  - Only hashed tokens are stored in the database
+  - Protects against token theft if database is compromised
+- **UUID-based single-use tokens** - Each token can only be used once
+- **30-minute token expiration** - Tokens automatically expire after 30 minutes
+- **One active reset request per user** - Prevents spam and abuse
+- **Email format validation** - Validates email addresses before processing
