@@ -19,4 +19,8 @@ interface PasswordResetRequestRepository : JpaRepository<PasswordResetRequest, L
         user: User,
         currentTime: LocalDateTime
     ): Boolean
+    
+    fun findAllByUsedFalseAndExpiresAtAfter(
+        currentTime: LocalDateTime
+    ): List<PasswordResetRequest>
 }

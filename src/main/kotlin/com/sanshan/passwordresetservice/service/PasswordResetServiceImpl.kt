@@ -23,7 +23,8 @@ class PasswordResetServiceImpl(
     private val userService: UserService,
     private val passwordResetRequestRepository: PasswordResetRequestRepository,
     private val emailValidator: EmailValidator,
-    private val tokenGenerator: TokenGenerator
+    private val tokenGenerator: TokenGenerator,
+    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 ) : PasswordResetService {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -55,12 +56,13 @@ class PasswordResetServiceImpl(
             throw ActiveRequestExistsException(email)
         }
 
-        val token = tokenGenerator.generateResetToken()
+        val rawToken = tokenGenerator.generateResetToken()
+        val hashedToken = passwordEncoder.encode(rawToken)
         val expiresAt = currentTime.plusMinutes(30)
 
         val resetRequest = PasswordResetRequest(
             user = user,
-            token = token,
+            token = hashedToken, // Store hashed token
             expiresAt = expiresAt
         )
 
@@ -68,31 +70,28 @@ class PasswordResetServiceImpl(
 
         logger.info("Reset token generated for email: {}, expires at: {}", email, expiresAt)
 
+        // Return raw token to user (in production, this would be sent via email)
         return PasswordResetResponse(
-            resetToken = token,
+            resetToken = rawToken,
             expiresAt = expiresAt.format(dateTimeFormatter)
         )
     }
 
     @Transactional
     override fun executePasswordReset(token: String, newPassword: String): PasswordResetExecutionResponse {
-        logger.info("Executing password reset for token: {}...", token.take(8))
-
-        val resetRequest = passwordResetRequestRepository.findByToken(token)
-            ?: run {
-                logger.warn("Invalid token: token not found")
-                throw InvalidTokenException()
-            }
+        logger.info("Executing password reset")
 
         val currentTime = LocalDateTime.now()
-        if (resetRequest.expiresAt.isBefore(currentTime)) {
-            logger.warn("Token expired: token={}, expiresAt={}", token.take(8), resetRequest.expiresAt)
+        
+        // Fetch all active (unused and not expired) reset requests
+        val activeRequests = passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(currentTime)
+        
+        // Find the request where the provided token matches the hashed token
+        val resetRequest = activeRequests.firstOrNull { request ->
+            passwordEncoder.matches(token, request.token)
+        } ?: run {
+            logger.warn("Invalid token: token not found or expired")
             throw InvalidTokenException()
-        }
-
-        if (resetRequest.used) {
-            logger.warn("Token already used: token={}, usedAt={}", token.take(8), resetRequest.usedAt)
-            throw TokenAlreadyUsedException()
         }
 
         val user = resetRequest.user

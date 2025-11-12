@@ -37,6 +37,7 @@ class PasswordResetServiceImplTest {
     private lateinit var passwordResetRequestRepository: PasswordResetRequestRepository
     private lateinit var emailValidator: EmailValidator
     private lateinit var tokenGenerator: TokenGenerator
+    private lateinit var passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 
     @BeforeEach
     fun setup() {
@@ -44,12 +45,14 @@ class PasswordResetServiceImplTest {
         passwordResetRequestRepository = mock(PasswordResetRequestRepository::class.java)
         emailValidator = mock(EmailValidator::class.java)
         tokenGenerator = mock(TokenGenerator::class.java)
+        passwordEncoder = mock(org.springframework.security.crypto.password.PasswordEncoder::class.java)
 
         passwordResetService = PasswordResetServiceImpl(
             userService,
             passwordResetRequestRepository,
             emailValidator,
-            tokenGenerator
+            tokenGenerator,
+            passwordEncoder
         )
     }
 
@@ -57,19 +60,22 @@ class PasswordResetServiceImplTest {
     fun `initiatePasswordReset should return token when valid email and no active request`() {
         val user = createTestUser()
         val requestCaptor = argumentCaptor<PasswordResetRequest>()
+        val hashedToken = "hashed_$TEST_TOKEN"
 
         whenever(emailValidator.isValid(TEST_EMAIL)).thenReturn(true)
         whenever(userService.findByEmail(TEST_EMAIL)).thenReturn(user)
         whenever(passwordResetRequestRepository.existsByUserAndUsedFalseAndExpiresAtAfter(any(), any()))
             .thenReturn(false)
         whenever(tokenGenerator.generateResetToken()).thenReturn(TEST_TOKEN)
+        whenever(passwordEncoder.encode(TEST_TOKEN)).thenReturn(hashedToken)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
         val response = passwordResetService.initiatePasswordReset(TEST_EMAIL)
 
         assertNotNull(response)
-        assertEquals(TEST_TOKEN, response.resetToken)
+        assertEquals(TEST_TOKEN, response.resetToken) // Response contains raw token
         assertNotNull(response.expiresAt)
+        assertEquals(hashedToken, requestCaptor.firstValue.token) // Database stores hashed token
         verify(passwordResetRequestRepository).save(any())
     }
 
@@ -119,7 +125,9 @@ class PasswordResetServiceImplTest {
         val resetRequest = createPasswordResetRequest(user = user)
         val requestCaptor = argumentCaptor<PasswordResetRequest>()
 
-        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
+        whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
+            .thenReturn(listOf(resetRequest))
+        whenever(passwordEncoder.matches(TEST_TOKEN, resetRequest.token)).thenReturn(true)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
         val response = passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
@@ -134,7 +142,8 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token not found`() {
-        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(null)
+        whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
+            .thenReturn(emptyList())
 
         assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
@@ -145,10 +154,9 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token is expired`() {
-        val user = createTestUser()
-        val resetRequest = createExpiredPasswordResetRequest(user = user)
-
-        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
+        // Expired tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
+        whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
+            .thenReturn(emptyList())
 
         assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
@@ -158,13 +166,12 @@ class PasswordResetServiceImplTest {
     }
 
     @Test
-    fun `executePasswordReset should throw TokenAlreadyUsedException when token already used`() {
-        val user = createTestUser()
-        val resetRequest = createUsedPasswordResetRequest(user = user)
+    fun `executePasswordReset should throw InvalidTokenException when token already used`() {
+        // Used tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
+        whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
+            .thenReturn(emptyList())
 
-        whenever(passwordResetRequestRepository.findByToken(TEST_TOKEN)).thenReturn(resetRequest)
-
-        assertThrows<TokenAlreadyUsedException> {
+        assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
         }
 
