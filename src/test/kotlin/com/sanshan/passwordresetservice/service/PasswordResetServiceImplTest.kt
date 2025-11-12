@@ -72,9 +72,9 @@ class PasswordResetServiceImplTest {
         val response = passwordResetService.initiatePasswordReset(TEST_EMAIL)
 
         assertNotNull(response)
-        assertEquals(TEST_TOKEN, response.resetToken) // Response contains raw token
+        assertEquals(TEST_TOKEN, response.resetToken)
         assertNotNull(response.expiresAt)
-        assertEquals(hashedToken, requestCaptor.firstValue.token) // Database stores hashed token
+        assertEquals(hashedToken, requestCaptor.firstValue.token)
         verify(passwordResetRequestRepository).save(any())
     }
 
@@ -158,10 +158,8 @@ class PasswordResetServiceImplTest {
         val user = createTestUser()
         val expiredRequest = createExpiredPasswordResetRequest(user = user)
         
-        // Expired tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
         whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
             .thenReturn(emptyList())
-        // But will be found in findAll() for logging
         whenever(passwordResetRequestRepository.findAll())
             .thenReturn(listOf(expiredRequest))
         whenever(passwordEncoder.matches(TEST_TOKEN, expiredRequest.token)).thenReturn(true)
@@ -178,10 +176,8 @@ class PasswordResetServiceImplTest {
         val user = createTestUser()
         val usedRequest = createUsedPasswordResetRequest(user = user)
         
-        // Used tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
         whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
             .thenReturn(emptyList())
-        // But will be found in findAll() for logging
         whenever(passwordResetRequestRepository.findAll())
             .thenReturn(listOf(usedRequest))
         whenever(passwordEncoder.matches(TEST_TOKEN, usedRequest.token)).thenReturn(true)
