@@ -15,9 +15,14 @@ A secure RESTful API service built with Kotlin and Spring Boot for handling pass
 - Java 17+
 - Docker (for PostgreSQL)
 
-## Quick Start
+## Getting Started
 
-### 1. Start PostgreSQL
+### Database Setup
+
+#### Option 1: Start New Database
+
+If this is your first time or you want a fresh database:
+
 ```bash
 docker run --name password-reset-db \
   -e POSTGRES_DB=password_reset \
@@ -27,12 +32,42 @@ docker run --name password-reset-db \
   -d postgres:15-alpine
 ```
 
-### 2. Run Application
+#### Option 2: Start Existing Database
+
+If you already have the database container:
+
+```bash
+# Check if database is running
+docker ps | grep password-reset-db
+
+# If not running, start it
+docker start password-reset-db
+```
+
+#### Option 3: Fresh Start - Clean Database
+
+If you want to completely reset and start fresh:
+
+```bash
+# Stop and remove the database container and remove all data
+docker stop password-reset-db
+docker rm password-reset-db
+
+# Start fresh database
+docker run --name password-reset-db \
+  -e POSTGRES_DB=password_reset \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=admin123 \
+  -p 5432:5432 \
+  -d postgres:15-alpine
+```
+
+### Run Application
 ```bash
 ./gradlew bootRun
 ```
 
-### 3. Create Test User
+### Create Test User
 ```bash
 docker exec password-reset-db psql -U admin -d password_reset -c \
   "INSERT INTO users (email, password_hash, created_at, updated_at) VALUES ('user@example.com', '\$2a\$10\$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);"
@@ -92,9 +127,9 @@ Import Postman collection from `postman/Password-Reset-Service.postman_collectio
 
 - **BCrypt password hashing** (10 rounds) for user passwords
 - **BCrypt token hashing** - Reset tokens are hashed before storage in the database
-  - Raw tokens are returned in API response (for exercise purposes)
-  - Only hashed tokens are stored in the database
-  - Protects against token theft if database is compromised
+    - Raw tokens are returned in API response (for exercise purposes)
+    - Only hashed tokens are stored in the database
+    - Protects against token theft if database is compromised
 - **UUID-based single-use tokens** - Each token can only be used once
 - **30-minute token expiration** - Tokens automatically expire after 30 minutes
 - **One active reset request per user** - Prevents spam and abuse
