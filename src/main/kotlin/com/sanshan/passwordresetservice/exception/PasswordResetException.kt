@@ -13,6 +13,3 @@ class ActiveRequestExistsException(email: String) :
 
 class InvalidTokenException :
     PasswordResetException("Invalid or expired reset token")
-
-class TokenAlreadyUsedException :
-    PasswordResetException("Reset token has already been used")

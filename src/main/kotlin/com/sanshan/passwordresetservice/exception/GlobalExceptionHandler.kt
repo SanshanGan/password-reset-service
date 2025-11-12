@@ -45,14 +45,6 @@ class GlobalExceptionHandler {
             .body(ErrorResponse("INVALID_TOKEN", ex.message ?: "Invalid token"))
     }
 
-    @ExceptionHandler(TokenAlreadyUsedException::class)
-    fun handleTokenAlreadyUsed(ex: TokenAlreadyUsedException): ResponseEntity<ErrorResponse> {
-        logger.warn("Token already used: {}", ex.message)
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(ErrorResponse("TOKEN_ALREADY_USED", ex.message ?: "Token already used"))
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
         val errors = ex.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
