@@ -7,7 +7,6 @@ import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
 import com.sanshan.passwordresetservice.exception.InvalidTokenException
-import com.sanshan.passwordresetservice.exception.TokenAlreadyUsedException
 import com.sanshan.passwordresetservice.exception.UserNotFoundException
 import com.sanshan.passwordresetservice.repository.PasswordResetRequestRepository
 import com.sanshan.passwordresetservice.util.EmailValidator
@@ -62,7 +61,7 @@ class PasswordResetServiceImpl(
 
         val resetRequest = PasswordResetRequest(
             user = user,
-            token = hashedToken, // Store hashed token
+            token = hashedToken,
             expiresAt = expiresAt
         )
 
@@ -70,7 +69,6 @@ class PasswordResetServiceImpl(
 
         logger.info("Reset token generated for email: {}, expires at: {}", email, expiresAt)
 
-        // Return raw token to user (in production, this would be sent via email)
         return PasswordResetResponse(
             resetToken = rawToken,
             expiresAt = expiresAt.format(dateTimeFormatter)
@@ -82,17 +80,10 @@ class PasswordResetServiceImpl(
         logger.info("Executing password reset")
 
         val currentTime = LocalDateTime.now()
-        
-        // Fetch all active (unused and not expired) reset requests
         val activeRequests = passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(currentTime)
         
-        // Find the request where the provided token matches the hashed token
-        val resetRequest = activeRequests.firstOrNull { request ->
-            passwordEncoder.matches(token, request.token)
-        } ?: run {
-            logger.warn("Invalid token: token not found or expired")
-            throw InvalidTokenException()
-        }
+        val resetRequest = findMatchingResetRequest(token, activeRequests, currentTime)
+            ?: throw InvalidTokenException()
 
         val user = resetRequest.user
         userService.updatePassword(user.persistedId, newPassword)
@@ -106,5 +97,52 @@ class PasswordResetServiceImpl(
         return PasswordResetExecutionResponse(
             message = "Password successfully reset"
         )
+    }
+
+    private fun findMatchingResetRequest(
+        token: String,
+        activeRequests: List<PasswordResetRequest>,
+        currentTime: LocalDateTime
+    ): PasswordResetRequest? {
+
+        val resetRequest = activeRequests.firstOrNull { request ->
+            passwordEncoder.matches(token, request.token)
+        }
+
+        if (resetRequest != null) {
+            return resetRequest
+        }
+
+        logTokenValidationFailure(token, currentTime)
+        return null
+    }
+
+    private fun logTokenValidationFailure(token: String, currentTime: LocalDateTime) {
+        val allRequests = passwordResetRequestRepository.findAll()
+        val matchingRequest = allRequests.firstOrNull { request ->
+            passwordEncoder.matches(token, request.token)
+        }
+
+        when {
+            matchingRequest == null -> {
+                logger.warn("Password reset failed: Token does not exist or hash doesn't match")
+            }
+            matchingRequest.used -> {
+                logger.warn(
+                    "Password reset failed: Token has already been used (usedAt: {})",
+                    matchingRequest.usedAt
+                )
+            }
+            matchingRequest.expiresAt.isBefore(currentTime) -> {
+                logger.warn(
+                    "Password reset failed: Token has expired (expiresAt: {}, currentTime: {})",
+                    matchingRequest.expiresAt,
+                    currentTime
+                )
+            }
+            else -> {
+                logger.warn("Password reset failed: Token is invalid for unknown reason")
+            }
+        }
     }
 }

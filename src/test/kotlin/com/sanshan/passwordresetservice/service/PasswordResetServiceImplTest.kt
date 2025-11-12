@@ -5,7 +5,6 @@ import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
 import com.sanshan.passwordresetservice.exception.InvalidTokenException
-import com.sanshan.passwordresetservice.exception.TokenAlreadyUsedException
 import com.sanshan.passwordresetservice.exception.UserNotFoundException
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.createExpiredPasswordResetRequest
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.createPasswordResetRequest
@@ -144,6 +143,8 @@ class PasswordResetServiceImplTest {
     fun `executePasswordReset should throw InvalidTokenException when token not found`() {
         whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
             .thenReturn(emptyList())
+        whenever(passwordResetRequestRepository.findAll())
+            .thenReturn(emptyList())
 
         assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
@@ -154,9 +155,16 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token is expired`() {
+        val user = createTestUser()
+        val expiredRequest = createExpiredPasswordResetRequest(user = user)
+        
         // Expired tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
         whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
             .thenReturn(emptyList())
+        // But will be found in findAll() for logging
+        whenever(passwordResetRequestRepository.findAll())
+            .thenReturn(listOf(expiredRequest))
+        whenever(passwordEncoder.matches(TEST_TOKEN, expiredRequest.token)).thenReturn(true)
 
         assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
@@ -167,9 +175,16 @@ class PasswordResetServiceImplTest {
 
     @Test
     fun `executePasswordReset should throw InvalidTokenException when token already used`() {
+        val user = createTestUser()
+        val usedRequest = createUsedPasswordResetRequest(user = user)
+        
         // Used tokens won't be returned by findAllByUsedFalseAndExpiresAtAfter
         whenever(passwordResetRequestRepository.findAllByUsedFalseAndExpiresAtAfter(any()))
             .thenReturn(emptyList())
+        // But will be found in findAll() for logging
+        whenever(passwordResetRequestRepository.findAll())
+            .thenReturn(listOf(usedRequest))
+        whenever(passwordEncoder.matches(TEST_TOKEN, usedRequest.token)).thenReturn(true)
 
         assertThrows<InvalidTokenException> {
             passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
