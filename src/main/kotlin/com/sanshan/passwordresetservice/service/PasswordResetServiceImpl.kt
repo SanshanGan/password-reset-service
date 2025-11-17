@@ -72,7 +72,7 @@ class PasswordResetServiceImpl(
     }
 
     @Transactional
-    override fun executePasswordReset(token: String, newPassword: String): PasswordResetRequest {
+    override fun executePasswordReset(token: String, newPassword: String) {
         logger.info("Executing password reset")
 
         val currentTime = LocalDateTime.now()
@@ -86,11 +86,9 @@ class PasswordResetServiceImpl(
 
         resetRequest.used = true
         resetRequest.usedAt = currentTime
-        val updatedRequest = passwordResetRequestRepository.save(resetRequest)
+        passwordResetRequestRepository.save(resetRequest)
 
         logger.info("Password successfully reset for user: {}", user.email)
-
-        return updatedRequest
     }
 
     private fun findMatchingResetRequest(

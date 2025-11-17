@@ -130,11 +130,8 @@ class PasswordResetServiceImplTest {
         whenever(passwordEncoder.matches(TEST_TOKEN, resetRequest.token)).thenReturn(true)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
-        val result = passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
+        passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
 
-        assertNotNull(result)
-        assertTrue(result.used)
-        assertNotNull(result.usedAt)
         assertTrue(requestCaptor.firstValue.used)
         assertNotNull(requestCaptor.firstValue.usedAt)
         verify(userService).updatePassword(user.persistedId, TEST_PASSWORD)
