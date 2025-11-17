@@ -69,11 +69,12 @@ class PasswordResetServiceImplTest {
         whenever(passwordEncoder.encode(TEST_TOKEN)).thenReturn(hashedToken)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
-        val response = passwordResetService.initiatePasswordReset(TEST_EMAIL)
+        val result = passwordResetService.initiatePasswordReset(TEST_EMAIL)
 
-        assertNotNull(response)
-        assertEquals(TEST_TOKEN, response.resetToken)
-        assertNotNull(response.expiresAt)
+        assertNotNull(result)
+        assertEquals(TEST_TOKEN, result.rawToken)
+        assertNotNull(result.resetRequest.expiresAt)
+        assertEquals(hashedToken, result.resetRequest.token)
         assertEquals(hashedToken, requestCaptor.firstValue.token)
         verify(passwordResetRequestRepository).save(any())
     }
@@ -129,10 +130,11 @@ class PasswordResetServiceImplTest {
         whenever(passwordEncoder.matches(TEST_TOKEN, resetRequest.token)).thenReturn(true)
         whenever(passwordResetRequestRepository.save(requestCaptor.capture())).thenAnswer { requestCaptor.firstValue }
 
-        val response = passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
+        val result = passwordResetService.executePasswordReset(TEST_TOKEN, TEST_PASSWORD)
 
-        assertNotNull(response)
-        assertEquals("Password successfully reset", response.message)
+        assertNotNull(result)
+        assertTrue(result.used)
+        assertNotNull(result.usedAt)
         assertTrue(requestCaptor.firstValue.used)
         assertNotNull(requestCaptor.firstValue.usedAt)
         verify(userService).updatePassword(user.persistedId, TEST_PASSWORD)

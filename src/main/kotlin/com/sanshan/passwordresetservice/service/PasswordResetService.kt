@@ -1,9 +1,8 @@
 package com.sanshan.passwordresetservice.service
 
-import com.sanshan.passwordresetservice.dto.PasswordResetExecutionResponse
-import com.sanshan.passwordresetservice.dto.PasswordResetResponse
+import com.sanshan.passwordresetservice.entity.PasswordResetRequest
 
 interface PasswordResetService {
-    fun initiatePasswordReset(email: String): PasswordResetResponse
-    fun executePasswordReset(token: String, newPassword: String): PasswordResetExecutionResponse
+    fun initiatePasswordReset(email: String): PasswordResetResult
+    fun executePasswordReset(token: String, newPassword: String): PasswordResetRequest
 }

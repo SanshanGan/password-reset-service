@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/api/password-reset")
@@ -18,11 +19,17 @@ class PasswordResetController(
     private val passwordResetService: PasswordResetService
 ) {
 
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
     @PostMapping("/initiate")
     fun initiatePasswordReset(
         @Valid @RequestBody request: InitiatePasswordResetRequest
     ): ResponseEntity<PasswordResetResponse> {
-        val response = passwordResetService.initiatePasswordReset(request.email)
+        val result = passwordResetService.initiatePasswordReset(request.email)
+        val response = PasswordResetResponse(
+            resetToken = result.rawToken,
+            expiresAt = result.resetRequest.expiresAt.format(dateTimeFormatter)
+        )
         return ResponseEntity.ok(response)
     }
 
@@ -30,9 +37,12 @@ class PasswordResetController(
     fun executePasswordReset(
         @Valid @RequestBody request: ExecutePasswordResetRequest
     ): ResponseEntity<PasswordResetExecutionResponse> {
-        val response = passwordResetService.executePasswordReset(
+        passwordResetService.executePasswordReset(
             request.resetToken,
             request.newPassword
+        )
+        val response = PasswordResetExecutionResponse(
+            message = "Password successfully reset"
         )
         return ResponseEntity.ok(response)
     }

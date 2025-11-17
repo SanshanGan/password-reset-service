@@ -1,7 +1,5 @@
 package com.sanshan.passwordresetservice.service
 
-import com.sanshan.passwordresetservice.dto.PasswordResetExecutionResponse
-import com.sanshan.passwordresetservice.dto.PasswordResetResponse
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
 import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
@@ -15,7 +13,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 class PasswordResetServiceImpl(
@@ -27,10 +24,9 @@ class PasswordResetServiceImpl(
 ) : PasswordResetService {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @Transactional
-    override fun initiatePasswordReset(email: String): PasswordResetResponse {
+    override fun initiatePasswordReset(email: String): PasswordResetResult {
         logger.info("Password reset initiated for email: {}", email)
 
         if (!emailValidator.isValid(email)) {
@@ -65,18 +61,18 @@ class PasswordResetServiceImpl(
             expiresAt = expiresAt
         )
 
-        passwordResetRequestRepository.save(resetRequest)
+        val savedRequest = passwordResetRequestRepository.save(resetRequest)
 
         logger.info("Reset token generated for email: {}, expires at: {}", email, expiresAt)
 
-        return PasswordResetResponse(
-            resetToken = rawToken,
-            expiresAt = expiresAt.format(dateTimeFormatter)
+        return PasswordResetResult(
+            resetRequest = savedRequest,
+            rawToken = rawToken
         )
     }
 
     @Transactional
-    override fun executePasswordReset(token: String, newPassword: String): PasswordResetExecutionResponse {
+    override fun executePasswordReset(token: String, newPassword: String): PasswordResetRequest {
         logger.info("Executing password reset")
 
         val currentTime = LocalDateTime.now()
@@ -90,13 +86,11 @@ class PasswordResetServiceImpl(
 
         resetRequest.used = true
         resetRequest.usedAt = currentTime
-        passwordResetRequestRepository.save(resetRequest)
+        val updatedRequest = passwordResetRequestRepository.save(resetRequest)
 
         logger.info("Password successfully reset for user: {}", user.email)
 
-        return PasswordResetExecutionResponse(
-            message = "Password successfully reset"
-        )
+        return updatedRequest
     }
 
     private fun findMatchingResetRequest(
