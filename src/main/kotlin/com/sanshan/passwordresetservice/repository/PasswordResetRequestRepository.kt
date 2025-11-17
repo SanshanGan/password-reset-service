@@ -8,13 +8,6 @@ import java.time.LocalDateTime
 
 @Repository
 interface PasswordResetRequestRepository : JpaRepository<PasswordResetRequest, Long> {
-    fun findByToken(token: String): PasswordResetRequest?
-    
-    fun findByUserAndUsedFalseAndExpiresAtAfter(
-        user: User,
-        currentTime: LocalDateTime
-    ): PasswordResetRequest?
-    
     fun existsByUserAndUsedFalseAndExpiresAtAfter(
         user: User,
         currentTime: LocalDateTime

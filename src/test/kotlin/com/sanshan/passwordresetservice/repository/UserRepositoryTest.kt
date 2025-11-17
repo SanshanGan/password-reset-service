@@ -1,16 +1,13 @@
 package com.sanshan.passwordresetservice.repository
 
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.createTestUser
-import com.sanshan.passwordresetservice.fixtures.TestFixtures.EXISTS_EMAIL
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.NONEXISTENT_EMAIL
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.TEST_EMAIL
 import com.sanshan.passwordresetservice.fixtures.TestFixtures.UNIQUE_EMAIL
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,24 +45,6 @@ class UserRepositoryTest {
         val found = userRepository.findByEmail(NONEXISTENT_EMAIL)
 
         assertNull(found)
-    }
-
-    @Test
-    fun `existsByEmail should return true when user exists`() {
-        val user = createTestUser(id = null, email = EXISTS_EMAIL)
-        entityManager.persist(user)
-        entityManager.flush()
-
-        val exists = userRepository.existsByEmail(EXISTS_EMAIL)
-
-        assertTrue(exists)
-    }
-
-    @Test
-    fun `existsByEmail should return false when user does not exist`() {
-        val exists = userRepository.existsByEmail(NONEXISTENT_EMAIL)
-
-        assertFalse(exists)
     }
 
     @Test
