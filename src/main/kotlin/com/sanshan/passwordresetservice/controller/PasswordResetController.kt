@@ -2,7 +2,6 @@ package com.sanshan.passwordresetservice.controller
 
 import com.sanshan.passwordresetservice.dto.ExecutePasswordResetRequest
 import com.sanshan.passwordresetservice.dto.InitiatePasswordResetRequest
-import com.sanshan.passwordresetservice.dto.PasswordResetExecutionResponse
 import com.sanshan.passwordresetservice.dto.PasswordResetResponse
 import com.sanshan.passwordresetservice.service.PasswordResetService
 import jakarta.validation.Valid
@@ -36,14 +35,11 @@ class PasswordResetController(
     @PostMapping("/execute")
     fun executePasswordReset(
         @Valid @RequestBody request: ExecutePasswordResetRequest
-    ): ResponseEntity<PasswordResetExecutionResponse> {
+    ): ResponseEntity<Void> {
         passwordResetService.executePasswordReset(
             request.resetToken,
             request.newPassword
         )
-        val response = PasswordResetExecutionResponse(
-            message = "Password successfully reset"
-        )
-        return ResponseEntity.ok(response)
+        return ResponseEntity.noContent().build()
     }
 }

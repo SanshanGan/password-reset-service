@@ -102,10 +102,8 @@ Resets password using a valid token.
 }
 ```
 
-**Response** (200):
-```json
-{"message": "Password successfully reset"}
-```
+**Response** (204 No Content):
+No response body. Success indicated by 204 status code.
 
 ## Testing
 
