@@ -63,15 +63,25 @@ docker run --name password-reset-db \
 ```
 
 ### Run Application
+
+Start the application (this will create database tables via Flyway migrations):
+
 ```bash
 ./gradlew bootRun
 ```
 
-### Create Test User
+### Seed Database with Test Users
+
+After the application has started at least once, seed the database with test users:
+
 ```bash
-docker exec password-reset-db psql -U admin -d password_reset -c \
-  "INSERT INTO users (email, password_hash, created_at, updated_at) VALUES ('user@example.com', '\$2a\$10\$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);"
+./scripts/seed-database.sh
 ```
+
+This creates a test user:
+- `user@example.com` / `password123`
+
+The script is **idempotent** - safe to run multiple times without creating duplicates.
 
 ## API Endpoints
 
