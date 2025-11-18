@@ -19,47 +19,50 @@ A secure RESTful API service built with Kotlin and Spring Boot for handling pass
 
 ### Database Setup
 
-#### Option 1: Start New Database
+#### Step 1: Configure Environment Variables
 
-If this is your first time or you want a fresh database:
+Copy the example environment file:
 
 ```bash
+cp .env.example .env
+```
+
+The `.env` file contains database credentials (already set with defaults for local development).
+
+#### Step 2: Start Database
+
+Load environment variables and start the database:
+
+```bash
+# Load environment variables
+source .env
+
+# Start database using environment variables
 docker run --name password-reset-db \
-  -e POSTGRES_DB=password_reset \
-  -e POSTGRES_USER=admin \
-  -e POSTGRES_PASSWORD=admin123 \
-  -p 5432:5432 \
+  -e POSTGRES_DB=$DB_NAME \
+  -e POSTGRES_USER=$DB_USER \
+  -e POSTGRES_PASSWORD=$DB_PASSWORD \
+  -p $DB_PORT:5432 \
   -d postgres:15-alpine
 ```
 
-#### Option 2: Start Existing Database
+#### Managing the Database
 
-If you already have the database container:
-
+**Start existing database:**
 ```bash
-# Check if database is running
-docker ps | grep password-reset-db
-
-# If not running, start it
 docker start password-reset-db
 ```
 
-#### Option 3: Fresh Start - Clean Database
-
-If you want to completely reset and start fresh:
-
+**Stop database:**
 ```bash
-# Stop and remove the database container and remove all data
+docker stop password-reset-db
+```
+
+**Reset database (clean start):**
+```bash
 docker stop password-reset-db
 docker rm password-reset-db
-
-# Start fresh database
-docker run --name password-reset-db \
-  -e POSTGRES_DB=password_reset \
-  -e POSTGRES_USER=admin \
-  -e POSTGRES_PASSWORD=admin123 \
-  -p 5432:5432 \
-  -d postgres:15-alpine
+# Then run Step 2 again
 ```
 
 ### Run Application
