@@ -147,6 +147,19 @@ This creates a test user:
 
 The script is **idempotent** - safe to run multiple times without creating duplicates.
 
+## Password Reset Flow
+
+The password reset process consists of two main flows: initiating a reset request and executing the password reset.
+
+![Password Reset Flow Diagram](docs/images/password-reset-flow.png)
+
+**Key Security Features:**
+- Tokens expire after 30 minutes
+- Tokens are single-use only
+- Tokens are hashed before storage (BCrypt)
+- Only one active reset request per user at a time
+- Passwords are hashed with BCrypt (10 rounds)
+
 ## API Endpoints
 
 ### POST /api/password-reset/initiate
