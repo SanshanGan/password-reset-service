@@ -192,6 +192,19 @@ Resets password using a valid token.
 **Response** (204 No Content):
 No response body. Success indicated by 204 status code.
 
+## API Documentation
+
+The service includes comprehensive OpenAPI documentation:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+
+The documentation includes:
+- All endpoint specifications
+- Request/response schemas
+- Error response examples
+- Authentication requirements
+
 ## Testing
 
 Import Postman collection from `postman/Password-Reset-Service.postman_collection.json`
