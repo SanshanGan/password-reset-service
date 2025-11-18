@@ -50,8 +50,31 @@ src/main/kotlin/com/sanshan/passwordresetservice/
 
 ## Prerequisites
 
-- Java 17+
-- Docker (for PostgreSQL)
+### Required Software
+
+| Tool | Version | Purpose | Verification |
+|------|---------|---------|--------------|
+| Java | 17+ | Runtime environment | `java -version` |
+| Docker | 20.10+ | Database container | `docker --version` |
+| Gradle | 8.5+ | Build tool (included via wrapper) | `./gradlew --version` |
+
+### Installation Instructions (macOS)
+
+```bash
+# Install Java 17
+brew install --cask temurin@17
+
+# Install Docker and Colima (lightweight Docker runtime)
+brew install docker colima
+
+# Start Colima
+colima start --cpu 2 --memory 4 --disk 20
+
+# Verify installations
+docker ps
+java -version
+docker --version
+```
 
 ## Getting Started
 
