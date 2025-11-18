@@ -10,6 +10,44 @@ A secure RESTful API service built with Kotlin and Spring Boot for handling pass
 - Flyway migrations
 - Gradle (Kotlin DSL)
 
+## Project Structure
+
+```
+src/main/kotlin/com/sanshan/passwordresetservice/
+├── config/
+│   ├── SecurityConfig.kt              # Security configuration
+│   └── OpenApiConfig.kt                # API documentation setup
+├── controller/
+│   └── PasswordResetController.kt      # REST API endpoints
+├── dto/
+│   ├── InitiatePasswordResetRequest.kt
+│   ├── ExecutePasswordResetRequest.kt
+│   ├── PasswordResetResponse.kt
+│   └── ErrorResponse.kt
+├── entity/
+│   ├── User.kt                         # User domain model
+│   └── PasswordResetRequest.kt         # Reset request domain model
+├── exception/
+│   ├── GlobalExceptionHandler.kt       # Centralized error handling
+│   └── PasswordResetException.kt       # Custom exceptions
+├── repository/
+│   ├── UserRepository.kt               # User data access
+│   └── PasswordResetRequestRepository.kt
+├── service/
+│   ├── PasswordResetService.kt         # Business logic interface
+│   ├── PasswordResetServiceImpl.kt     # Business logic implementation
+│   └── PasswordResetResult.kt          # Service result wrapper
+└── util/
+    ├── EmailValidator.kt               # Email validation
+    └── TokenGenerator.kt               # Token generation
+```
+
+**Architecture:**
+- **3-Layer Architecture**: Controller → Service → Repository
+- **Domain-Driven Design**: Entities represent core business concepts
+- **DTO Pattern**: Separate API contracts from domain models
+- **Centralized Error Handling**: GlobalExceptionHandler for consistent error responses
+
 ## Prerequisites
 
 - Java 17+
