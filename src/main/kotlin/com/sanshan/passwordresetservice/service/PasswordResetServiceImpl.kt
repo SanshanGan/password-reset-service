@@ -1,6 +1,7 @@
 package com.sanshan.passwordresetservice.service
 
 import com.sanshan.passwordresetservice.entity.PasswordResetRequest
+import com.sanshan.passwordresetservice.entity.PasswordResetResult
 import com.sanshan.passwordresetservice.entity.persistedId
 import com.sanshan.passwordresetservice.exception.ActiveRequestExistsException
 import com.sanshan.passwordresetservice.exception.InvalidEmailException
